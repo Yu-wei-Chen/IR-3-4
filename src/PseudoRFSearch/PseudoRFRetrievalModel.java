@@ -223,32 +223,38 @@ public class PseudoRFRetrievalModel {
         	String temp = documents.get(t).docid(); // put top 100 docid into hashset 
         	RFid.add(temp);
         }
-		
+        
+		//---------- Top K feedback document------------ top 100
         Double CLength_top100 = 0.0;
         
         // get top 100 collection length
         for(String str : RFid) {
-        	int foo = Integer.parseInt(str); // transfer id to int type for seaching document length
+        	int foo = Integer.parseInt(str); // transfer id to int type for searching document length
         	int dLength_top100 = indexReader.docLength(foo);
         	CLength_top100 = CLength_top100 + dLength_top100; // sum the top 100 collection length
         }
+        
         
         // pseudoRF find top 100 P(token|feedback model) 
         for (int q=0;q<query_token.length;q++ ) {
 
 			postingList = indexReader.getPostingList(query_token[q]); // postinglist
 			Double tokenfreq = 0.0; // token freauency
+			Double tokenfreq_total = 0.0; // total token freauency 
 			if(postingList != null){
 				for (int j = 0; j < postingList.length; j++) {
 					int docid = postingList[j][0];
 					if(RFid.contains(String.valueOf(docid))){ // transfer docid to string type
 						tokenfreq = tokenfreq+postingList[j][1]; // sum token frequency
 					}
+					// get qi frequency in whole collection
+					tokenfreq_total = tokenfreq_total+postingList[j][1]; // sum total token frequency
 				}		
 			}
 			
-			Double temp1 =  tokenfreq/CLength_top100; // P(token|feedback model) 
-			TokenRFScore.put(query_token[q], temp1); // put P(token|feedback model) into hashmap  
+			//Double temp1 =  tokenfreq/CLength_top100; // P(token|feedback model) 
+			Double temp1 = (tokenfreq+(u*(tokenfreq_total/cLength)))/(CLength_top100+u); // P(token|feedback model) 
+			TokenRFScore.put(query_token[q], temp1); // put P(token|feedback model) into hashmap 
 
 		}
 
